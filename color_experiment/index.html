@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>神判断実験</title>
+</head>
+
+<body style="text-align:center">
+
+<div id="screen">
+  <h2>神を判断してください</h2>
+  <p>画像を見て、最も近い選択肢を選んでください。</p>
+  <button onclick="startExperiment()">スタート</button>
+</div>
+
+<script>
+// ===== 実験設定 =====
+const trials = [
+  {
+    image: "images/img1.png",
+    choices: ["オシリス", "ラー", "メジェド"]
+  },
+  {
+    image: "images/img2.png",
+    choices: ["アヌビス", "イシス", "メンカウラー"]
+  },
+  {
+    image: "images/img3.png",
+    choices: ["ネフティス", "ネフェルティティ", "バステト"]
+  },
+  {
+    image: "images/img4.png",
+    choices: ["ホルス", "セト", "アペプ"]
+  },
+  {
+    image: "images/img5.png",
+    choices: ["かわいいメジェド", "メジェド", "喜びのメジェド"]
+  }
+];
+
+// ===== 変数 =====
+let trialIndex = 0;
+let startTime = 0;
+let results = [];
+
+// ===== 実験開始 =====
+function startExperiment(){
+  trialIndex = 0;
+  results = [];
+  showTrial();
+}
+
+// ===== 刺激提示 =====
+function showTrial(){
+  const t = trials[trialIndex];
+
+  document.getElementById("screen").innerHTML = `
+    <p>問題 ${trialIndex + 1} / ${trials.length}</p>
+    <div style="
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+">
+  <img src="${t.image}" style="max-height:100%; max-width:100%;">
+</div>
+<br>
+
+    <button onclick="answer(0)">${t.choices[0]}</button>
+    <button onclick="answer(1)">${t.choices[1]}</button>
+    <button onclick="answer(2)">${t.choices[2]}</button>
+  `;
+
+  startTime = performance.now();
+}
+
+// ===== 回答処理 =====
+function answer(response){
+  const rt = Math.round(performance.now() - startTime);
+
+  results.push({
+    trial: trialIndex + 1,
+    image: trials[trialIndex].image,
+    choice0: trials[trialIndex].choices[0],
+    choice1: trials[trialIndex].choices[1],
+    choice2: trials[trialIndex].choices[2],
+    response: response,
+    rt: rt
+  });
+
+  trialIndex++;
+
+  if(trialIndex < trials.length){
+    showTrial();
+  } else {
+    endExperiment();
+  }
+}
+
+// ===== 終了・CSV作成 =====
+function endExperiment(){
+  let csv = "trial,image,choice0,choice1,choice2,response,rt\n";
+
+  results.forEach(r => {
+    csv += `${r.trial},${r.image},${r.choice0},${r.choice1},${r.choice2},${r.response},${r.rt}\n`;
+  });
+
+  document.getElementById("screen").innerHTML = `
+    <h2>実験終了</h2>
+    <button onclick="downloadCSV()">CSVをダウンロード</button>
+    <pre>${csv}</pre>
+  `;
+
+ window.downloadCSV = function () {
+  // ★ BOM付きUTF-8
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "reaction_time.csv";
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+}
+</script>
+
+</body>
+</html>
